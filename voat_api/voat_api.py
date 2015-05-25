@@ -137,8 +137,9 @@ def get_auth(username, password, api_key):
     req = requests.post(Voat.base_url + "/api/token",
                         headers={
                             "Content-Type": "application/x-www-form-urlencoded",
-                            "Voat-ApiKey": api_key,
-                        }, data={
+                            "Voat-ApiKey": api_key
+                        },
+                        data={
                             "grant_type": "password",
                             "username": username,
                             "password": password
