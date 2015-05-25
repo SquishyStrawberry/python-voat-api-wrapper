@@ -19,8 +19,8 @@ class AuthToken(object):
         if isinstance(expiry_date, str):
             if expiry_date.isdigit():
                 expiry_date = int(expiry_date)
-            else:
-                raise VoatException("Bad expiry date, must be int or str.")
+        if not isinstance(expiry_date, int):
+            raise VoatException("Bad expiry date, must be int!")
         self.username = username
         self.expiry_date = expiry_date
         self.gotten_at = time.time()
