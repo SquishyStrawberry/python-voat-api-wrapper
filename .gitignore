@@ -4,3 +4,5 @@ config.json
 api_test.py
 
 __pycache__
+
+output.json

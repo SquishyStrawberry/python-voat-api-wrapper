@@ -1,2 +1,4 @@
 #!/usr/bin/env python3
-from voat_api.voat_api import Voat
+# __all__ saves the day.
+from voat.exceptions import *
+from voat.classes import *

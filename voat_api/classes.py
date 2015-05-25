@@ -2,11 +2,9 @@
 import requests
 import json
 import time
+from voat.exceptions import * 
 
-
-class VoatException(Exception):
-    pass
-
+__all__ = ["Voat", "AuthToken"]
 
 class AuthToken(object):
 
@@ -73,10 +71,8 @@ class Voat(object):
         self.password = password
         self.auth_token = get_auth(self.username, self.password, self.api_key)
         self.logged_in = True
-        self.session.headers.update({
-            "Authorization": "{} {}".format(self.auth_token.token_type.capitalize(),
-                                            self.auth_token.token)
-        })
+        # I used to just set hte session.headers here...
+        # ...but if I just set 'em once it wouldn't trigger the time-out.
 
     def get_subverse(self, subverse):
         url = Voat.base_url + "api/v1/v/{}".format(subverse)
@@ -87,6 +83,12 @@ class Voat(object):
                 return req_json["data"]
             else:
                 raise VoatException(req_json["error"])
+        else:
+            if req.status_code == 403:
+                raise VoatNoAuthException("Need to login to use this feature!")
+            elif req.status_code == 404:
+                raise VoatThingNotFound(
+                    "Couldn't find subverse '{}'!".format(subverse))
 
     def submit(self, title, content, subverse, is_url=False):
         """
@@ -108,7 +110,11 @@ class Voat(object):
         else:
             data["content"] = content
         # We need to dumps the data, as else it would get translated to FORM.
-        req = self.session.post(url, data=json.dumps(data))
+
+        req = self.session.post(url, data=json.dumps(data), headers={
+            "Authorization": "{} {}".format(self.auth_token.token_type.capitalize(),
+                                            self.auth_token.token)
+        })
         if req.ok:
             req_json = req.json()
             if req_json["success"]:
@@ -131,6 +137,25 @@ class Voat(object):
         Please refer to .submit's docs.
         """
         return self.submit(title, content, subverse, False)
+
+    def get_submission(self, id, subverse=None):
+        if subverse is None:
+            url = Voat.base_url + "api/v1/v/{}".format(id)
+        else:
+            url = Voat.base_url + "api/v1/v/{}/{}".format(subverse, id)
+        req = self.session.get(url)
+        if req.ok:
+            req_json = req.json()
+            if req_json["success"]:
+                return req_json["data"]
+            else:
+                raise req_json["error"]
+        else:
+            if req.status_code == 404:
+                raise VoatPostNotFound(
+                    "Post '{}' could not be found!".format(id))
+            else:
+                raise VoatException(req.status_code)
 
 
 def get_auth(username, password, api_key):
