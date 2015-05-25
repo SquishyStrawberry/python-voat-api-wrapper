@@ -45,6 +45,7 @@ class AuthToken(object):
 
 
 class Voat(object):
+
     """
     A Class that handles the voat api, providing access to all its features.
     """
@@ -62,7 +63,7 @@ class Voat(object):
 
     def login(self, username, password):
         """
-        Logins into a VoatBinder instance.
+        Logins into a Voat instance.
         Arguments:
             username: Your voat username.
             password: Your voat password.
@@ -78,7 +79,7 @@ class Voat(object):
         })
 
     def get_subverse(self, subverse):
-        url = VoatBinder.base_url + "api/v1/v/{}".format(subverse)
+        url = Voat.base_url + "api/v1/v/{}".format(subverse)
         req = self.session.get(url)
         if req.ok:
             req_json = req.json()
@@ -99,7 +100,7 @@ class Voat(object):
         """
         if not self.logged_in:
             raise VoatException("Need to be logged in to post!")
-        url = VoatBinder.base_url + "api/v1/v/{}".format(subverse)
+        url = Voat.base_url + "api/v1/v/{}".format(subverse)
         data = {"title": title}
         # Easier than implementing two methods.
         if is_url:
@@ -133,14 +134,15 @@ class Voat(object):
 
 
 def get_auth(username, password, api_key):
-    req = requests.post(VoatBinder.base_url + "/api/token", headers={
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Voat-ApiKey": api_key,
-    }, data={
-        "grant_type": "password",
-        "username": username,
-        "password": password
-    })
+    req = requests.post(Voat.base_url + "/api/token",
+                        headers={
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Voat-ApiKey": api_key,
+                        }, data={
+                            "grant_type": "password",
+                            "username": username,
+                            "password": password
+                        })
     if req.ok:
         req_json = req.json()
         return AuthToken(req_json["userName"],
