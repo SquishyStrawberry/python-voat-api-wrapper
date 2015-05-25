@@ -5,7 +5,7 @@ with io.open("requirements.txt") as req_file:
     requirements = req_file.splitlines()
 
 setuptools.setup(
-    name="voat",
+    name="py_voat",
     version=0.01,
     description="Python Bindings for the Voat API",
     author="SquishyStrawberry",
