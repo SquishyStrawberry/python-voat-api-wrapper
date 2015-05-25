@@ -2,9 +2,10 @@
 import requests
 import json
 import time
-from voat.exceptions import * 
+from py_voat.exceptions import *
 
 __all__ = ["Voat", "AuthToken"]
+
 
 class AuthToken(object):
 
