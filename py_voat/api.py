@@ -72,7 +72,7 @@ class Voat(object):
             data["content"] = content
         # We need to dumps the data, as else it would get translated to FORM.
 
-        req = self.session.post(url, data=json.dumps(data), headers=self.auth_token.get_headers())
+        req = self.session.post(url, data=json.dumps(data), headers=self.auth_token.headers)
         if req.ok:
             req_json = req.json()
             if req_json["success"]:
@@ -125,7 +125,7 @@ class Voat(object):
             data["url"] = content
         else:
             data["content"] = content
-        req = self.session.put(url, data=json.dumps(data), headers=self.auth_token.get_headers())
+        req = self.session.put(url, data=json.dumps(data), headers=self.auth_token.headers)
         if req.ok:
             req_json = req.json()
             if req_json["success"]:
