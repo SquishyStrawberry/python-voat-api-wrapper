@@ -1,4 +1,8 @@
-#python-voat
-A few bindings for Voat's Closed Beta API.
-To install, run 'python3 setup.py install', and voila!
-(To be expanded once this hits alpha)
+# python-voat
+Bindings for Voat's API.
+
+# A Warning
+
+Please remember that this is in alpha.  
+Everything about these bindings may change.  
+Return types, method locations, class names...

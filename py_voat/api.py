@@ -2,14 +2,15 @@
 import requests
 import json
 from py_voat.exceptions import *
-from py_voat.classes import AuthToken
+from py_voat.classes import *
 from py_voat.constants import base_url
+
 
 class Voat(object):
 
     """
     A Class that handles the voat api, providing access to all its features.
-    """ 
+    """
 
     def __init__(self, api_key):
         self.api_key = api_key
@@ -31,7 +32,9 @@ class Voat(object):
         """
         self.username = username
         self.password = password
-        self.auth_token = AuthToken.get_auth(self.username, self.password, self.api_key)
+        self.auth_token = AuthToken.get_auth(self.username,
+                                             self.password,
+                                             self.api_key)
         self.logged_in = True
 
     def get_subverse(self, subverse):
@@ -40,14 +43,20 @@ class Voat(object):
         if req.ok:
             req_json = req.json()
             if req_json["success"]:
-                return req_json["data"]
+                submissions = []
+                for i in req_json["data"]:
+                    sub = Submission(i["title"],
+                                     i["content"] or i["url"],
+                                     [],  # Meant to be comments.
+                                     i["userName"],
+                                     i["id"],
+                                     bool(i["url"]))
+                    submissions.append(sub)
+                return submissions
             else:
                 raise VoatException(req_json["error"])
         else:
-            if req.status_code == 403:
-                raise VoatNoAuthException("Need to login to use this feature!")
-            elif req.status_code == 404:
-                raise VoatThingNotFound("Couldn't find subverse '{}'!".format(subverse))
+            self.handle_code(req.status_code)
 
     def submit(self, title, content, subverse, is_url=False):
         """
@@ -70,7 +79,9 @@ class Voat(object):
             data["content"] = content
         # We need to dumps the data, as else it would get translated to FORM.
 
-        req = self.session.post(url, data=json.dumps(data), headers=self.auth_token.headers)
+        req = self.session.post(url,
+                                data=json.dumps(data),
+                                headers=self.auth_token.headers)
         if req.ok:
             req_json = req.json()
             if req_json["success"]:
@@ -78,10 +89,7 @@ class Voat(object):
             else:
                 raise VoatException(req_json["error"])
         else:
-            if req.status_code == 401:
-                raise VoatInvalidAuth("Authentication is invalid!")
-            else:
-                raise VoatException(req.status_code)
+            self.handle_code(req.status_code)
 
     # Most useless methods ever.
 
@@ -110,13 +118,7 @@ class Voat(object):
             else:
                 raise req_json["error"]
         else:
-            
-            if req.status_code == 404:
-                raise VoatThingNotFound("Post '{}' could not be found!".format(id))
-            elif req.status_code == 401:
-                raise VoatInvalidAuth("Authentication is invalid for post '{}'".format(id))
-            else:
-                raise VoatException(req.status_code)
+            self.handle_code(req.status_code)
 
     def edit(self, title, content, id, subverse=None, is_url=False):
         if subverse is None:
@@ -129,7 +131,9 @@ class Voat(object):
             data["url"] = content
         else:
             data["content"] = content
-        req = self.session.put(url, data=json.dumps(data), headers=self.auth_token.headers)
+        req = self.session.put(url,
+                               data=json.dumps(data),
+                               headers=self.auth_token.headers)
         if req.ok:
             req_json = req.json()
             if req_json["success"]:
@@ -137,9 +141,4 @@ class Voat(object):
             else:
                 raise VoatException(req_json["error"])
         else:
-            if req.status_code == 404:
-                raise VoatThingNotFound("Post '{}' could not be found!".format(id))
-            elif req.status_code == 401:
-                raise VoatInvalidAuth("Authentication is invalid for post '{}'".format(id))
-            else:
-                raise VoatException(req.status_code)
+            self.handle_code(req.status_code)
