@@ -38,7 +38,7 @@ class AuthToken(object):
     @property
     def headers(self):
         return {
-                "Authentication": "{} {}".format(self.token_type.capitalize(),
+                "Authorization": "{} {}".format(self.token_type.capitalize(),
                                                  self.token)
         }
 

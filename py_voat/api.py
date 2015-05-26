@@ -33,8 +33,6 @@ class Voat(object):
         self.password = password
         self.auth_token = get_auth(self.username, self.password, self.api_key)
         self.logged_in = True
-        # I used to just set the session.headers here...
-        # ...but if I just set 'em once it wouldn't trigger the time-out.
 
     def get_subverse(self, subverse):
         url = base_url + "api/v1/v/{}".format(subverse)
@@ -80,7 +78,10 @@ class Voat(object):
             else:
                 raise VoatException(req_json["error"])
         else:
-            raise VoatException(req.status_code)
+            if req.status_code == 401:
+                raise VoatInvalidAuth("Authentication is invalid!")
+            else:
+                raise VoatException(req.status_code)
 
     # Most useless methods ever.
 
@@ -109,8 +110,11 @@ class Voat(object):
             else:
                 raise req_json["error"]
         else:
+            
             if req.status_code == 404:
                 raise VoatThingNotFound("Post '{}' could not be found!".format(id))
+            elif req.status_code == 401:
+                raise VoatInvalidAuth("Authentication is invalid for post '{}'".format(id))
             else:
                 raise VoatException(req.status_code)
 
@@ -139,12 +143,3 @@ class Voat(object):
                 raise VoatInvalidAuth("Authentication is invalid for post '{}'".format(id))
             else:
                 raise VoatException(req.status_code)
-
-
-
-
-
-
-
-
-
