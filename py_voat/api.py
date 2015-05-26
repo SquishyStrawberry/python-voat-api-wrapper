@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-import requests
 import json
-from py_voat.exceptions import *
 from py_voat.classes import *
 from py_voat.constants import base_url
 
@@ -142,3 +140,14 @@ class Voat(object):
                 raise VoatException(req_json["error"])
         else:
             self.handle_code(req.status_code)
+
+    def handle_code(self, code):
+        # TODO add more specific messages
+        if code == 401:
+            raise VoatNoAuthException("Invalid authentication!")
+        elif code == 404:
+            raise VoatThingNotFound("Could not find thing!")
+        elif code == 429:
+            raise VoatApiLimitException("Sending too many requests!")
+        else:
+            raise VoatException(code)

@@ -28,3 +28,6 @@ class VoatBadExpiry(VoatException):
 class VoatInvalidAuth(VoatException):
     pass
 
+
+class VoatApiLimitException(VoatException):
+    pass
