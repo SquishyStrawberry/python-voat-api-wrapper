@@ -2,8 +2,10 @@
 import json
 from py_voat.classes import *
 from py_voat.constants import base_url
+from py_voat.helpers import handle_code
 
 
+# noinspection PyAttributeOutsideInit
 class Voat(object):
 
     """
@@ -13,6 +15,7 @@ class Voat(object):
     def __init__(self, api_key):
         self.api_key = api_key
         self.logged_in = False
+        self.last_call = None
         self.session = requests.Session()
         # Some headers I know I'll always need.
         self.session.headers.update({
@@ -22,7 +25,7 @@ class Voat(object):
 
     def login(self, username, password):
         """
-        Logins into a Voat instance.
+        Log-ins into a Voat instance.
         Arguments:
             username: Your voat username.
             password: Your voat password.
@@ -43,9 +46,10 @@ class Voat(object):
             if req_json["success"]:
                 submissions = []
                 for i in req_json["data"]:
+                    comments = []
                     sub = Submission(i["title"],
                                      i["content"] or i["url"],
-                                     [],  # Meant to be comments.
+                                     comments,
                                      i["userName"],
                                      i["id"],
                                      bool(i["url"]))
@@ -54,9 +58,9 @@ class Voat(object):
             else:
                 raise VoatException(req_json["error"])
         else:
-            self.handle_code(req.status_code)
+            handle_code(req.status_code)
 
-    def submit(self, title, content, subverse, is_url=False):
+    def submit_post(self, title, content, subverse, is_url=False):
         """
         Submits a 'thing', the base behind submit_url and submit_text.
         Arguments:
@@ -64,7 +68,7 @@ class Voat(object):
             content: If is_url == True, then this will be the link to the url.
                      Else, this will be the content of the text post.
             subverse: What subverse to post in.
-            is_url: Determines wheter the post is a text post or a 'link' post.
+            is_url: Determines whether the post is a text post or a 'link' post.
         """
         if not self.logged_in:
             raise VoatException("Need to be logged in to post!")
@@ -87,27 +91,27 @@ class Voat(object):
             else:
                 raise VoatException(req_json["error"])
         else:
-            self.handle_code(req.status_code)
+            handle_code(req.status_code)
 
     # Most useless methods ever.
 
     def submit_url(self, title, url, subverse):
         """
-        Please refer to .submit's docs.
+        Please refer to the .submit method's docs.
         """
-        return self.submit(title, url, subverse, True)
+        return self.submit_post(title, url, subverse, True)
 
     def submit_text(self, title, content, subverse):
         """
-        Please refer to .submit's docs.
+        Please refer to the .submit method's docs.
         """
-        return self.submit(title, content, subverse, False)
+        return self.submit_post(title, content, subverse, False)
 
-    def get(self, id, subverse=None):
+    def get_post(self, post_id, subverse=None):
         if subverse is None:
-            url = base_url + "api/v1/{}".format(id)
+            url = base_url + "api/v1/submissions/{}".format(post_id)
         else:
-            url = base_url + "api/v1/v/{}/{}".format(subverse, id)
+            url = base_url + "api/v1/v/{}/{}".format(subverse, post_id)
         req = self.session.get(url)
         if req.ok:
             req_json = req.json()
@@ -116,13 +120,15 @@ class Voat(object):
             else:
                 raise req_json["error"]
         else:
-            self.handle_code(req.status_code)
+            handle_code(req.status_code)
 
-    def edit(self, title, content, id, subverse=None, is_url=False):
+    def edit(self, title, content, post_id, subverse=None, is_url=False):
+        if not self.logged_in:
+            raise VoatNoAuthException("Need to be authenticated to post something!")
         if subverse is None:
-            url = base_url + "api/v1/{}".format(id)
+            url = base_url + "api/v1/submissions/{}".format(post_id)
         else:
-            url = base_url + "api/v1/v/{}/{}".format(subverse, id)
+            url = base_url + "api/v1/v/{}/{}".format(subverse, post_id)
 
         data = {"title": title}
         if is_url:
@@ -139,15 +145,32 @@ class Voat(object):
             else:
                 raise VoatException(req_json["error"])
         else:
-            self.handle_code(req.status_code)
+            handle_code(req.status_code)
 
-    def handle_code(self, code):
-        # TODO add more specific messages
-        if code == 401:
-            raise VoatNoAuthException("Invalid authentication!")
-        elif code == 404:
-            raise VoatThingNotFound("Could not find thing!")
-        elif code == 429:
-            raise VoatApiLimitException("Sending too many requests!")
+    def delete_post(self, post_id, subverse=None):
+        if not self.logged_in:
+            raise VoatNoAuthException("Need to be logged in to delete post!")
+        if subverse is None:
+            url = base_url + "api/v1/submissions/{}".format(post_id)
         else:
-            raise VoatException(code)
+            url = base_url + "api/v1/v/{}/{}".format(subverse, post_id)
+        req = requests.delete(url, headers=self.auth_token.headers)
+        if req.ok:
+            req_json = req.json()
+            if not req_json["success"]:
+                raise VoatException(req_json["error"])
+        else:
+            handle_code(req.status_code)
+
+    # For python2 compatibility
+    def __getattr__(self, name):
+        return self.__getattribute__(name)
+
+    def __getattribute__(self, name):
+        value = super().__getattribute__(name)
+        # Keeps calls to 1/s.
+        if callable(value):
+            if self.last_call and time.time() - self.last_call < 1:
+                time.sleep(1 - (time.time() - self.last_call))
+            self.last_call = time.time()
+        return value
