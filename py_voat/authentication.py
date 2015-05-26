@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import requests
+import time
 from py_voat.exceptions import *
-
+from py_voat.constants import base_url
 
 class AuthToken(object):
 
@@ -15,7 +16,7 @@ class AuthToken(object):
             if expiry_date.isdigit():
                 expiry_date = int(expiry_date)
         if not isinstance(expiry_date, int):
-            raise VoatException("Bad expiry date, must be int!")
+            raise VoatBadExpiry("Bad expiry date, must be int!")
         self.username = username
         self.expiry_date = expiry_date
         self.gotten_at = time.time()
@@ -26,7 +27,7 @@ class AuthToken(object):
     def token(self):
         current_time = time.time()
         if current_time >= self.gotten_at + self.expiry_date:
-            raise VoatException("Token is expired!")
+            raise VoatExpiredToken("This token is expired!")
         else:
             return self._token
 
@@ -34,13 +35,16 @@ class AuthToken(object):
     def token(self, val):
         self._token = val
 
-    # For ease of use.
+    def get_headers(self):
+        return ({"Authentication": self.token_type.capitalize() + " " + self.token})
+
     def __str__(self):
         return self.token
+        
 
 
 def get_auth(username, password, api_key):
-    req = requests.post(Voat.base_url + "/api/token",
+    req = requests.post(base_url + "/api/token",
                         headers={
                             "Content-Type": "application/x-www-form-urlencoded",
                             "Voat-ApiKey": api_key

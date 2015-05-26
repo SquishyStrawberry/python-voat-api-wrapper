@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 All of the exceptions used in the main voat api.
+These are really specific in the names.
 """
 
 
@@ -18,3 +19,12 @@ class VoatNoAuthException(VoatException):
 
 class VoatExpiredToken(VoatException):
     pass
+
+
+class VoatBadExpiry(VoatException):
+    pass
+
+
+class VoatInvalidAuth(VoatException):
+    pass
+
