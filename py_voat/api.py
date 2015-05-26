@@ -2,7 +2,7 @@
 import requests
 import json
 from py_voat.exceptions import *
-from py_voat.authentication import get_auth
+from py_voat.classes import AuthToken
 from py_voat.constants import base_url
 
 class Voat(object):
@@ -31,7 +31,7 @@ class Voat(object):
         """
         self.username = username
         self.password = password
-        self.auth_token = get_auth(self.username, self.password, self.api_key)
+        self.auth_token = AuthToken.get_auth(self.username, self.password, self.api_key)
         self.logged_in = True
 
     def get_subverse(self, subverse):
