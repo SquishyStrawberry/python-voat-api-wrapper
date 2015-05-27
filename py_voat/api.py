@@ -122,7 +122,7 @@ class Voat(object):
         else:
             handle_code(req.status_code)
 
-    def edit(self, title, content, post_id, subverse=None, is_url=False):
+    def edit_post(self, title, content, post_id, subverse=None, is_url=False):
         if not self.logged_in:
             raise VoatNoAuthException("Need to be authenticated to post something!")
         if subverse is None:
@@ -157,6 +157,7 @@ class Voat(object):
         req = requests.delete(url, headers=self.auth_token.headers)
         if req.ok:
             req_json = req.json()
+            # There is no req_json["data"] to return.
             if not req_json["success"]:
                 raise VoatException(req_json["error"])
         else:
