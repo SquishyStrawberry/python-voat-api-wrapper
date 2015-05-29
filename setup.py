@@ -1,9 +1,10 @@
-import setuptools
 import io
+import setuptools
 from py_voat.constants import version
 
+
 with io.open("requirements.txt") as req_file:
-    requirements = req_file.splitlines()
+    requirements = req_file.readlines()
 
 setuptools.setup(
     name="py_voat",

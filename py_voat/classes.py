@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import requests
 import time
+import requests
 from collections import namedtuple
 from datetime import datetime
 from py_voat.exceptions import *
@@ -138,6 +138,7 @@ class Submission(VoatObject):
         self._comments = val
 
 
+# noinspection PyAttributeOutsideInit
 class Subverse(VoatObject):
     @classmethod
     def from_dict(cls, json_data, voat_instance=None):
