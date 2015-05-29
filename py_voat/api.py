@@ -37,7 +37,7 @@ class Voat(object):
                                              self.api_key)
         self.logged_in = True
 
-    def get_subverse(self, subverse):
+    def get_subverse_posts(self, subverse):
         req = self.make_request(self.session.get, "v", subverse)
         if req.ok:
             req_json = req.json()
@@ -45,6 +45,17 @@ class Voat(object):
                 return [Submission.from_dict(i, self) for i in req_json["data"]]
             else:
                 raise VoatException(req_json["error"])
+        else:
+            handle_code(req.status_code)
+
+    def get_subverse(self, subverse):
+        req = self.make_request(self.session.get, "v", subverse, "info")
+        if req.ok:
+            req_json = req.json()
+            if req_json["success"]:
+                return Subverse.from_dict(req_json["data"], self)
+            else:
+                raise Voatexception(req_json["error"])
         else:
             handle_code(req.status_code)
 
@@ -149,7 +160,6 @@ class Voat(object):
                                     "v", subverse, str(post_id),
                                     data=json.dumps(data),
                                     headers=self.auth_token.headers)
-
         if req.ok:
             req_json = req.json()
             # There is no req_json["data"] to return.
