@@ -4,10 +4,10 @@ import requests
 from collections import namedtuple
 from datetime import datetime
 from py_voat.exceptions import *
-from py_voat.constants import *
+from py_voat.constants import raw_url
+from py_voat.helpers import handle_code
 
 # placeholders while I implement actual classes
-Comment = namedtuple("Comment", "content author id")
 Message = namedtuple("Message", "title content author id")
 
 
@@ -42,7 +42,7 @@ class AuthToken(object):
 
     @classmethod
     def get_auth(cls, username, password, api_key):
-        req = requests.post(base_url + "/api/token",
+        req = requests.post(raw_url + "/api/token",
                             headers={
                                 "Voat-ApiKey": api_key,
                                 "Content-Type": "application/x-www-form-urlencoded"
@@ -58,6 +58,8 @@ class AuthToken(object):
                        req_json["access_token"],
                        req_json["token_type"],
                        req_json["expires_in"])
+        else:
+            handle_code(req.status_code)
 
     @property
     def token(self):
@@ -165,3 +167,44 @@ class Subverse(VoatObject):
     @posts.setter
     def posts(self, val):
         self._posts = val
+
+
+class Comment(VoatObject):
+    @classmethod
+    def from_dict(cls, json_data, voat_instance=None):
+        date = json_data["date"]
+        inst = cls(
+            voat=voat_instance,
+            comment_id=json_data["id"],
+            date=date,
+            content=json_data["content"],
+            karma=json_data["upVotes"]-json_data["downVotes"],
+            subverse=json_data["subverse"],
+            author=json_data["userName"],
+            parent_id=json_data["parentID"],
+            submission_id=json_data["submissionID"]
+        )
+        return inst
+
+
+    @property
+    def parent(self):
+        if getattr(self, "_parent", None) is None:
+            if getattr(self, "voat", None) is not None and getattr(self, "parent_id", None) is not None:
+                try:
+                    self._parent = self.voat.get_comment(self.parent_id)
+                except:
+                    self._parent = self.__class__()
+            else:
+                self._parent = self.__class__()
+        return self._parent
+
+    @property
+    def children(self):
+        if getattr(self, "_children", None) is None:
+            if getattr(self, "submission_id", None) is not None and getattr(self, "voat", None) is not None:
+                comments = self.voat.fetch_comments(self.submission_id, getattr(self, "subverse", None))
+                self._children = [i for i in comments if getattr(i, "parent_id", None) == self.comment_id]
+            else:
+                self._children = []
+        return self._children

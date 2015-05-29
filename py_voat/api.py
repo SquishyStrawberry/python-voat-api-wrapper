@@ -2,7 +2,7 @@
 import json
 from py_voat.classes import *
 from py_voat.constants import base_url
-from py_voat.helpers import handle_code
+from py_voat.helpers import handle_code, handle_error
 
 
 # noinspection PyAttributeOutsideInit
@@ -28,7 +28,6 @@ class Voat(object):
         Arguments:
             username: Your voat username.
             password: Your voat password.
-            api_key: Your api key.
         """
         self.username = username
         self.password = password
@@ -44,7 +43,7 @@ class Voat(object):
             if req_json["success"]:
                 return [Submission.from_dict(i, self) for i in req_json["data"]]
             else:
-                raise VoatException(req_json["error"])
+                handle_error(req_json["error"])
         else:
             handle_code(req.status_code)
 
@@ -55,7 +54,7 @@ class Voat(object):
             if req_json["success"]:
                 return Subverse.from_dict(req_json["data"], self)
             else:
-                raise Voatexception(req_json["error"])
+                handle_error(req_json["error"])
         else:
             handle_code(req.status_code)
 
@@ -78,7 +77,6 @@ class Voat(object):
         else:
             data["content"] = content
         # We need to dumps the data, as else it would get translated to FORM.
-
         req = self.make_request(self.session.post,
                                 "v", subverse,
                                 data=json.dumps(data),
@@ -88,7 +86,7 @@ class Voat(object):
             if req_json["success"]:
                 return req_json["data"]
             else:
-                raise VoatException(req_json["error"])
+                handle_error(req_json["error"])
         else:
             handle_code(req.status_code)
 
@@ -143,7 +141,7 @@ class Voat(object):
             if req_json["success"]:
                 return req_json["data"]
             else:
-                raise VoatException(req_json["error"])
+                handle_error(req_json["error"])
         else:
             handle_code(req.status_code)
 
@@ -164,7 +162,7 @@ class Voat(object):
             req_json = req.json()
             # There is no req_json["data"] to return.
             if not req_json["success"]:
-                raise VoatException(req_json["error"])
+                handle_error(req_json["error"])
         else:
             handle_code(req.status_code)
 
@@ -178,9 +176,20 @@ class Voat(object):
             req_json = req.json()
             if req_json["success"]:
                 # TODO make Comment class.
-                return req_json["data"]
+                return [Comment.from_dict(i, self) for i in req_json["data"]]
             else:
-                raise VoatException(req_json["error"])
+                handle_error(req_json["error"])
+        else:
+            handle_code(req.status_code)
+
+    def get_comment(self, comment_id):
+        req = self.make_request(self.session.get, "comments", str(comment_id))
+        if req.ok:
+            req_json = req.json()
+            if req_json["success"]:
+                return Comment.from_dict(req_json["data"], self)
+            else:
+                handle_error(req_json["error"])
         else:
             handle_code(req.status_code)
 

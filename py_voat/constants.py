@@ -2,4 +2,5 @@
 # A list of costants.
 
 version = 0.01
-base_url = "https://fakevout.azurewebsites.net/api/v1/"
+raw_url = "https://fakevout.azurewebsites.net/"
+base_url = raw_url + "api/v1/"

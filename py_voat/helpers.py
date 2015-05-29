@@ -12,3 +12,8 @@ def handle_code(code):
         raise VoatApiLimitException("Sending too many requests!")
     else:
         raise VoatException(code)
+
+
+def handle_error(error):
+    # TODO implement actual error messages
+    raise VoatException(error)
